@@ -17,7 +17,7 @@
     "fetch": "^1.1.0",
     "fs": "^0.0.1-security",
     "multer": "^2.0.2",
-    "pdf-parse": "^2.4.5",
+    "pdf-parse": "^1.1.1",
     "tesseract.js": "^6.0.1"
   }
 }
