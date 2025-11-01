@@ -22,7 +22,7 @@ async function getperplexityapisummary(prompt) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: Bearer ${process.env.PERPLEXITY_API_KEY},
+      Authorization: Bearer $(process.env.PERPLEXITY_API_KEY),
     },
     body: JSON.stringify({
       model: "sonar-pro",
