@@ -35,7 +35,7 @@ async function getperplexityapisummary(prompt) {
 
   if (!response.ok) {
     const errtext = await response.text();
-    throw new Error(perplexity api error : ${errtext});
+    throw new Error(`perplexity api error : ${errtext}`);
   }
   const data = await response.json();
   return data.choices?.[0]?.message?.content?.trim() || "";
