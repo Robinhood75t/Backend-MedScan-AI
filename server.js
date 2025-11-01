@@ -3,6 +3,7 @@ const express = require("express");
 const multer = require("multer");
 const fs = require("fs");
 const pdfParse = require("pdf-parse/lib/pdf-parse");
+const pdfParseFn = pdfParse.default || pdfParse;
 const Tesseract = require("tesseract.js");
 const dotenv = require("dotenv");
 const fetch = require("node-fetch");
@@ -52,7 +53,7 @@ app.post("/api/summarize",upload.single("file"), async function(req, res){
     let extractedText = "";
     if(req.file.mimetype === "application/pdf"){
         const databuffer = fs.readFileSync(req.file.path);
-        const pdfdata = await pdfParse(databuffer);
+        const pdfdata = await pdfParseFn(databuffer);
         extractedText = pdfdata.text;
     }else if(req.file.mimetype.startsWith("image/")){
         const result = await Tesseract.recognize(req.file.path , "eng");
