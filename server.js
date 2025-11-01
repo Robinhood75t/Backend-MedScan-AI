@@ -1,8 +1,7 @@
-
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
-const fs  = require("fs");
+const fs = require("fs").promises;
 const pdfParse = require("pdf-parse");
 const Tesseract = require("tesseract.js");
 const fetch = require("node-fetch");
@@ -13,62 +12,62 @@ const app = express();
 const port = 5000;
 app.use(cors());
 
-
 const upload = multer({
-    dest: "uploads/",
-    limits: { fileSize : 10 * 1024 * 1024}
-})
+  dest: "uploads/",
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+});
 
-async function getperplexityapisummary(prompt){
-    const response = await fetch("https://api.perplexity.ai/chat/completions" ,{
-        method: "POST",
-        headers: {
-            "Content-Type" : "application/json",
-            Authorization : `Bearer ${process.env.PERPLEXITY_API_KEY}`
-        },
-        body: JSON.stringify({
-            model: "sonar-pro",
-            messages:[
-                {role : "system" , content: "you are a helpful medical assistant."},
-                {role: "user" , content: prompt}
-            ]
-        })
-    })
+async function getperplexityapisummary(prompt) {
+  const response = await fetch("https://api.perplexity.ai/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: Bearer ${process.env.PERPLEXITY_API_KEY},
+    },
+    body: JSON.stringify({
+      model: "sonar-pro",
+      messages: [
+        { role: "system", content: "you are a helpful medical assistant." },
+        { role: "user", content: prompt },
+      ],
+    }),
+  });
 
-    if(!response.ok){
-        const errtext = await response.text();
-        throw new Error (`perplexity api error : ${errtext}`)
-    }
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content?.trim() || "";
+  if (!response.ok) {
+    const errtext = await response.text();
+    throw new Error(perplexity api error : ${errtext});
+  }
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content?.trim() || "";
 }
 
-app.post("/api/summarize" , upload.single("file") , async function( req , res){
-
-    if(!req.file){
-        return res.status(400).json({ error : "file is not supported."})
+app.post("/api/summarize", upload.single("file"), async function (req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "file is not supported." });
     }
+
     let extractedText = "";
-    if(req.file.mimetype === "application/pdf"){
-        const databuffer = fs.readFileSync(req.file.path);
-        const pdfdata = await pdfParse(databuffer);
-        extractedText = pdfdata.text;
-    }
-    else if(req.file.mimetype.startsWith("image/")){
-        const result = await Tesseract.recognize(req.file.path , "eng");
-        extractedText = result.data.text;
-    }else{
-        fs.unlinkSync(req.file.path);
-        return res.status(400).json({ error: "only images and pdf are supported."})
+
+    if (req.file.mimetype === "application/pdf") {
+      const databuffer = await fs.readFile(req.file.path);
+      const pdfdata = await pdfParse(databuffer);
+      extractedText = pdfdata.text;
+    } else if (req.file.mimetype.startsWith("image/")) {
+      const result = await Tesseract.recognize(req.file.path, "eng");
+      extractedText = result.data.text;
+    } else {
+      await fs.unlink(req.file.path);
+      return res.status(400).json({ error: "only images and pdf are supported." });
     }
 
-    fs.unlinkSync(req.file.path);
-    if(!extractedText.trim()){
-        return res.status(400).json({error : "not readable data is found"});
+    await fs.unlink(req.file.path);
+
+    if (!extractedText.trim()) {
+      return res.status(400).json({ error: "not readable data is found" });
     }
 
-    const prompt = 
-        `
+    const prompt = `
 You are a medical report summarization assistant.
 
 Your task is to analyze the following medical report and return a well-structured JSON object.
@@ -99,7 +98,7 @@ Your task is to analyze the following medical report and return a well-structure
 === STYLE RULES ===
 - Do NOT include paragraph formatting before JSON.
 - No additional commentary.
-- Bold markers (**like this**) should NOT be included, just plain text.
+- Bold markers (like this) should NOT be included, just plain text.
 - No markdown formatting.
         
 === REPORT START ===
@@ -110,14 +109,19 @@ ${extractedText}
     let aitext = await getperplexityapisummary(prompt);
 
     let summary;
-    try{
-        summary = JSON.parse(aitext);
-    }catch{
-        summary = {"summary" : aitext}
+    try {
+      summary = JSON.parse(aitext);
+    } catch (err) {
+      console.error("Failed to parse JSON from AI response:", aitext);
+      summary = { summary: aitext };
     }
-    res.json({ result : summary});
-})
+    res.json({ result: summary });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: "Server error occurred while processing the document. Please try again later." });
+  }
+});
 
-app.listen(port , function(){
-    console.log(`http://localhost:${port}/api/summarize`);
-})
+app.listen(port, function () {
+  console.log(http://localhost:${port}/api/summarize);
+});
