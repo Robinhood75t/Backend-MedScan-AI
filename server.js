@@ -52,7 +52,7 @@ app.post("/api/summarize" , upload.single("file") , async function( req , res){
     if(req.file.mimetype === "application/pdf"){
         const databuffer = fs.readFileSync(req.file.path);
         const pdfdata = await pdfParse(databuffer);
-        extractedText = pdfdata.data;
+        extractedText = pdfdata.text;
     }
     else if(req.file.mimetype.startsWith("image/")){
         const result = await Tesseract.recognize(req.file.path , "eng");
