@@ -123,5 +123,5 @@ ${extractedText}
 });
 
 app.listen(port, function () {
-  console.log(http://localhost:${port}/api/summarize);
+  console.log(`http://localhost:${port}/api/summarize`);
 });
