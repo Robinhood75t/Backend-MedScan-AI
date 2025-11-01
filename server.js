@@ -15,7 +15,7 @@ app.use(cors());
 
 
 const upload = multer({
-    dest: "uplaods/",
+    dest: "uploads/",
     limits: { fileSize : 10 * 1024 * 1024}
 })
 
@@ -64,7 +64,7 @@ app.post("/api/summarize" , upload.single("file") , async function( req , res){
 
     fs.unlinkSync(req.file.path);
     if(!extractedText.trim()){
-        return res.status.json({error : "not readable data is found"});
+        return res.status(400).json({error : "not readable data is found"});
     }
 
     const prompt = 
